@@ -1,0 +1,78 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: lumen_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    environment:
+      # Keep last-used model loaded between requests (saves reload time)
+      - OLLAMA_KEEP_ALIVE=24h
+      # Single-user MVP — one concurrent request is enough
+      - OLLAMA_NUM_PARALLEL=1
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:11434/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - lumen_net
+
+    # ── NVIDIA GPU (Docker) ───────────────────────────────────────────────────
+    # Uncomment to enable GPU acceleration. Requires nvidia-container-toolkit.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+    # ── NVIDIA GPU (Podman) ───────────────────────────────────────────────────
+    # Podman uses CDI device passthrough instead of Docker's deploy.resources.
+    # Run: sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+    # Then uncomment:
+    # devices:
+    #   - nvidia.com/gpu=all
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lumen_app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Bind mount for persistence. All uploads, vectors, and DB live here.
+      - ./data:/data
+    env_file:
+      - .env
+    environment:
+      # Override OLLAMA_BASE_URL to use the Docker service name
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - lumen_net
+
+volumes:
+  # Ollama model weights — stored in a named volume so they persist
+  # across container rebuilds without cluttering the project directory.
+  ollama_models:
+
+networks:
+  lumen_net:
+    driver: bridge
+
+# ── Podman Compose Notes ───────────────────────────────────────────────────────
+# This file works with `podman compose` (Podman v4+) or `podman-compose`.
+# Rootless Podman may require adjusting network settings if containers
+# cannot reach each other by service name. If that happens, set:
+#   OLLAMA_BASE_URL=http://localhost:11434
+# and remove `depends_on` (Podman rootless uses host network by default
+# when using `--network=host`, which bypasses bridge DNS).
