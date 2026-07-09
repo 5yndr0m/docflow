@@ -39,7 +39,7 @@ async def list_sessions(db: AsyncSession = Depends(get_db)) -> list[SessionRead]
 
 
 @router.delete("/sessions/{session_id}", status_code=204)
-async def delete_session(session_id: str, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_session(session_id: str, db: AsyncSession = Depends(get_db)):
     deleted = await chat_history.delete_session(db, session_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Session not found.")

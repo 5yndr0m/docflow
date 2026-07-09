@@ -81,7 +81,7 @@ async def get_document(document_id: str, db: AsyncSession = Depends(get_db)) -> 
 
 
 @router.delete("/{document_id}", status_code=204)
-async def delete_document(document_id: str, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_document(document_id: str, db: AsyncSession = Depends(get_db)):
     doc = await db.get(Document, document_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
