@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI
 from nicegui import ui
 
@@ -41,11 +42,13 @@ init_ui()
 if __name__ == "__main__":
     ui.run_with(
         fastapi_app,
-        host=settings.APP_HOST,
-        port=settings.APP_PORT,
         title="Lumen",
         favicon="💡",
         storage_secret=settings.NICEGUI_STORAGE_SECRET,
-        show=False,          # Don't auto-open a browser in Docker
+    )
+    uvicorn.run(
+        fastapi_app,
+        host=settings.APP_HOST,
+        port=settings.APP_PORT,
         reload=settings.DEBUG,
     )

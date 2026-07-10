@@ -6,7 +6,7 @@ Everything runs in a single Python process. NiceGUI mounts onto the FastAPI appl
 
 ```
 python -m app.main
-└── uvicorn (started by NiceGUI)
+└── uvicorn (started by app.main)
     ├── FastAPI routes  →  /api/*
     └── NiceGUI routes  →  / /workspace /chat /settings
 ```
